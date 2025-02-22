@@ -97,18 +97,18 @@ func (t *Task) fromString(str string) error {
 
 type TaskManager struct {
 	Tasks        []Task
-	StatusIndex  map[Status][]*Task
-	ProjectIndex map[string][]*Task
+	StatusIndex  map[Status][]int
+	ProjectIndex map[string][]int
 }
 
 func (tm *TaskManager) UpdateIndexes() {
-	tm.StatusIndex = make(map[Status][]*Task)
-	tm.ProjectIndex = make(map[string][]*Task)
+	tm.StatusIndex = make(map[Status][]int)
+	tm.ProjectIndex = make(map[string][]int)
 
 	for i := 0; i < len(tm.Tasks); i++ {
 		t := tm.Tasks[i]
-		tm.StatusIndex[t.Status] = append(tm.StatusIndex[t.Status], &tm.Tasks[i])
-		tm.ProjectIndex[t.Project] = append(tm.ProjectIndex[t.Project], &tm.Tasks[i])
+		tm.StatusIndex[t.Status] = append(tm.StatusIndex[t.Status], i)
+		tm.ProjectIndex[t.Project] = append(tm.ProjectIndex[t.Project], i)
 	}
 }
 
@@ -168,4 +168,78 @@ func (tm *TaskManager) Save(filepath string) (int, error) {
 	}
 
 	return n, nil
+}
+
+func (tm *TaskManager) AddTask(t Task) error {
+	if t.Description == "" {
+		return fmt.Errorf("error adding task: cannot have empty task")
+	}
+
+	tm.Tasks = append(tm.Tasks, t)
+	tm.UpdateIndexes()
+	return nil
+}
+
+func (tm *TaskManager) DeleteTask(index int) error {
+	if index < 0 || index >= len(tm.Tasks) {
+		return fmt.Errorf("error deleting task: index not found")
+	}
+
+	tm.Tasks = append(tm.Tasks[:index], tm.Tasks[index+1:]...)
+	tm.UpdateIndexes()
+
+	return nil
+}
+
+func (tm *TaskManager) GetTask(index int) (Task, error) {
+	if index < 0 || index >= len(tm.Tasks) {
+		return Task{}, fmt.Errorf("error getting task: index not found")
+	}
+
+	t := tm.Tasks[index]
+
+	return t, nil
+}
+
+func (tm *TaskManager) GetTaskIndexesByStatus(status Status) []int {
+	return tm.StatusIndex[status]
+}
+
+func (tm *TaskManager) GetTaskIndexesByProject(project string) []int {
+	return tm.ProjectIndex[project]
+}
+
+func (tm *TaskManager) GetTasksByIndex(indexes []int) []Task {
+	t := make([]Task, 0)
+
+	for _, taskIndex := range indexes {
+		t = append(t, tm.Tasks[taskIndex])
+	}
+	return t
+}
+
+// TODO
+func (tm *TaskManager) DeleteByStatus(status Status) error {
+	tasksToDelete, ok := tm.StatusIndex[status]
+	if !ok {
+		return fmt.Errorf("error deleting tasks in status %s: no tasks found", status)
+	}
+
+	filteredTasks := make([]Task, 0)
+
+	for key, task := range tm.Tasks {
+		found := false
+		for _, taskIndex := range tasksToDelete {
+			if key == taskIndex {
+				found = true
+			}
+		}
+		if found {
+			filteredTasks = append(filteredTasks, task)
+		}
+	}
+
+	tm.Tasks = filteredTasks
+	tm.UpdateIndexes()
+	return nil
 }
