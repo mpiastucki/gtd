@@ -228,15 +228,42 @@ func (tm *TaskManager) DeleteByStatus(status Status) error {
 	filteredTasks := make([]Task, 0)
 
 	for key, task := range tm.Tasks {
-		found := false
+		saveThisTask := true
 		for _, taskIndex := range tasksToDelete {
-			if key == taskIndex {
-				found = true
+			if key != taskIndex {
+				saveThisTask = false
 			}
 		}
-		if found {
+		if saveThisTask {
 			filteredTasks = append(filteredTasks, task)
 		}
+	}
+
+	tm.Tasks = filteredTasks
+	tm.UpdateIndexes()
+	return nil
+}
+
+func (tm *TaskManager) DeleteByProject(project string) error {
+	tasksToDelete, ok := tm.ProjectIndex[project]
+	if !ok {
+		return fmt.Errorf("error finding project: %s", project)
+	}
+
+	filteredTasks := make([]Task, 0)
+
+	for key, task := range tm.Tasks {
+		saveThisTask := true
+		for _, taskIndex := range tasksToDelete {
+			if key != taskIndex {
+				saveThisTask = false
+			}
+		}
+
+		if saveThisTask {
+			filteredTasks = append(filteredTasks, task)
+		}
+
 	}
 
 	tm.Tasks = filteredTasks
