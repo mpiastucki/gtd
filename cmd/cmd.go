@@ -5,15 +5,9 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/mpiastucki/gtd/models"
 )
-
-func clearTerminal() {
-	fmt.Print("\033[2J")
-	fmt.Print("\033[H")
-}
 
 func showMainMenu() int {
 	menu := `=== GTD ===
@@ -25,7 +19,7 @@ n: new task | s: status | p: projects | at: all tasks | q: save and quit
 	fmt.Print(menu)
 	sc := bufio.NewScanner(os.Stdin)
 	for sc.Scan() {
-		normalizedInput := strings.ToLower(strings.TrimSpace(sc.Text()))
+		normalizedInput := normalizeInput(sc.Text())
 
 		switch normalizedInput {
 		case "n":
@@ -62,7 +56,7 @@ func showFilterStatusMenu(tm *models.TaskManager) int {
 	for running {
 		fmt.Printf(menu, currentStatus)
 		for sc.Scan() {
-			normalizedInput := strings.ToLower(strings.TrimSpace(sc.Text()))
+			normalizedInput := normalizeInput(sc.Text())
 
 			switch normalizedInput {
 			case "i":
