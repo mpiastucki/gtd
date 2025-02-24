@@ -218,8 +218,7 @@ func (tm *TaskManager) GetTasksByIndex(indexes []int) []Task {
 	return t
 }
 
-// TODO
-func (tm *TaskManager) DeleteByStatus(status Status) error {
+func (tm *TaskManager) DeleteStatus(status Status) error {
 	tasksToDelete, ok := tm.StatusIndex[status]
 	if !ok {
 		return fmt.Errorf("error deleting tasks in status %s: no tasks found", status)
@@ -244,7 +243,7 @@ func (tm *TaskManager) DeleteByStatus(status Status) error {
 	return nil
 }
 
-func (tm *TaskManager) DeleteByProject(project string) error {
+func (tm *TaskManager) DeleteProject(project string) error {
 	tasksToDelete, ok := tm.ProjectIndex[project]
 	if !ok {
 		return fmt.Errorf("error finding project: %s", project)

@@ -23,13 +23,13 @@ n: new task | s: status | p: projects | at: all tasks | q: save and quit
 
 		switch normalizedInput {
 		case "n":
-			return addTaskmenu
+			return mainMenu
 		case "s":
-			return filterByStatusMenu
+			return statusViewMenu
 		case "p":
-			return allProjectsMenu
+			return mainMenu
 		case "at":
-			return allTasksMenu
+			return allTasksViewMenu
 		case "q":
 			return quit
 		default:
@@ -41,65 +41,90 @@ n: new task | s: status | p: projects | at: all tasks | q: save and quit
 	return mainMenu
 }
 
-// TODO: finish filtering by status options
-func showFilterStatusMenu(tm *models.TaskManager) int {
-	menu := `Filter by Status
-	i: inbox | a: action | l: later | w: waiting | d: done | q: quit
-	
-	Viewing Status: %s
-	`
-
-	running := false
-	currentStatus := models.INBOX
-	sc := bufio.NewScanner(os.Stdin)
-
-	for running {
-		fmt.Printf(menu, currentStatus)
-		for sc.Scan() {
-			normalizedInput := normalizeInput(sc.Text())
-
-			switch normalizedInput {
-			case "i":
-				currentStatus := models.INBOX
-			}
-		}
-	}
-
-}
-
 const (
 	mainMenu int = iota
-	filterByStatusMenu
-	allProjectsMenu
-	allTasksMenu
-	singleProjectMenu
-	singleTaskMenu
-	addTaskmenu
-	changeTaskStatus
+	statusViewMenu
+	projectViewMenu
+	allTasksViewMenu
+	SingleTaskViewMenu
 	quit
 )
 
 func Run() int {
-	tm := models.TaskManager{}
 	datafile := "gtd.txt"
+	tm := models.TaskManager{}
+	err := tm.Load(datafile)
+	if err != nil {
+		log.Printf("error loading data from file %s: %v", datafile, err)
+	}
+
+	// var selectedTask int
+	// var selectedTasks []int
+	// var menuStack []int = []int{mainMenu}
 
 	running := true
 	currentMenu := mainMenu
+	currentStatus := models.INBOX
+
+	sc := bufio.NewScanner(os.Stdin)
 
 	for running {
 
 		switch currentMenu {
 		case mainMenu:
-			currentMenu = showMainMenu()
 			clearTerminal()
-		case filterByStatusMenu:
-			currentMenu = showFilterStatusMenu()
+			currentMenu = showMainMenu()
+		case statusViewMenu:
+			clearTerminal()
+			fmt.Println("Status View")
+			fmt.Printf("\nViewing: %s\n", currentStatus)
+			for _, taskIndex := range tm.StatusIndex[currentStatus] {
+				fmt.Printf("%d %s\n", taskIndex, tm.Tasks[taskIndex].Description)
+			}
+			fmt.Println("")
+			fmt.Println("n: new task | t: select task | c: complete a task | m: main menu")
+			fmt.Println("i: INBOX | a: ACTION | l: LATER | w: WAITING | d: DONE")
+			fmt.Print(">> ")
+			for sc.Scan() {
 
-		case allProjectsMenu:
-		case singleProjectMenu:
-		case singleTaskMenu:
-		case addTaskmenu:
-		case changeTaskStatus:
+				input := normalizeInput(sc.Text())
+				switch input {
+				case "n":
+
+					newTask := models.NewTask()
+					newTask.Description = "test"
+					tm.AddTask(newTask)
+					break
+
+				case "i":
+					currentStatus = models.INBOX
+					break
+				case "a":
+					currentStatus = models.ACTION
+					break
+				case "l":
+					currentStatus = models.LATER
+					break
+				case "w":
+					currentStatus = models.WAITING
+					break
+				case "d":
+					currentStatus = models.DONE
+					break
+				case "t":
+					continue
+				case "c":
+					continue
+				case "m":
+					currentMenu = mainMenu
+					break
+				default:
+					fmt.Printf("%s is not a valid option\n", input)
+					fmt.Print(">> ")
+				}
+				break
+			}
+
 		case quit:
 			clearTerminal()
 			fmt.Printf("Saving tasks to file %s...\n", datafile)
