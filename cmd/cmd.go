@@ -162,7 +162,7 @@ func Run() int {
 				fmt.Printf("Note: %s\n", task.Note)
 				fmt.Printf("Project: %s\n", task.Project)
 				fmt.Println()
-				fmt.Print("s: edit status | d: edit description | u: edit URL | n: edit note | p: edit project | qw: save and quit | q: quit without saving\n")
+				fmt.Println("s: edit status | d: edit description | u: edit URL | n: edit note | p: edit project | qw: save and quit | q: quit without saving")
 				fmt.Print(">> ")
 
 			}
