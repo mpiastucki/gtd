@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"slices"
+	"strconv"
 
 	"github.com/mpiastucki/gtd/models"
 )
@@ -46,7 +48,7 @@ const (
 	statusViewMenu
 	projectViewMenu
 	allTasksViewMenu
-	SingleTaskViewMenu
+	singleTaskViewMenu
 	quit
 )
 
@@ -58,9 +60,9 @@ func Run() int {
 		log.Printf("error loading data from file %s: %v", datafile, err)
 	}
 
-	// var selectedTask int
-	// var selectedTasks []int
-	// var menuStack []int = []int{mainMenu}
+	var selectedTask int
+	var selectedTasks []int
+	var menuStack []int = []int{mainMenu}
 
 	running := true
 	currentMenu := mainMenu
@@ -75,10 +77,13 @@ func Run() int {
 			clearTerminal()
 			currentMenu = showMainMenu()
 		case statusViewMenu:
+
+			tasks := tm.StatusIndex[currentStatus]
+
 			clearTerminal()
 			fmt.Println("Status View")
 			fmt.Printf("\nViewing: %s\n", currentStatus)
-			for _, taskIndex := range tm.StatusIndex[currentStatus] {
+			for _, taskIndex := range tasks {
 				fmt.Printf("%d %s\n", taskIndex, tm.Tasks[taskIndex].Description)
 			}
 			fmt.Println("")
@@ -112,7 +117,23 @@ func Run() int {
 					currentStatus = models.DONE
 					break
 				case "t":
-					continue
+					currentMenu = singleTaskViewMenu
+					for sc.Scan() {
+						fmt.Print(">> ")
+						selectedTaskInput, err := strconv.Atoi(normalizeInput(sc.Text()))
+						if err != nil {
+							fmt.Printf("error parsing %s: %v", selectedTaskInput, err)
+						}
+						if slices.Contains(tasks, selectedTaskInput) {
+							selectedTask = selectedTaskInput
+							break
+						} else {
+							fmt.Printf("error finding %s: enter a valid task index from the list\n", selectedTaskInput)
+							continue
+						}
+					}
+					break
+
 				case "c":
 					continue
 				case "m":
@@ -123,6 +144,27 @@ func Run() int {
 					fmt.Print(">> ")
 				}
 				break
+			}
+		case singleTaskViewMenu:
+			task, err := tm.GetTask(selectedTask)
+			for sc.Scan() {
+				clearTerminal()
+				if err != nil {
+					log.Printf("error finding task %d: %v\n", selectedTask, err)
+				}
+				fmt.Println("Single Task View")
+				fmt.Println()
+				fmt.Printf("Task: %d\n", selectedTask)
+				fmt.Println()
+				fmt.Printf("Status: %s\n", task.Status)
+				fmt.Printf("Description: %s\n", task.Description)
+				fmt.Printf("URL: %s\n", task.URL)
+				fmt.Printf("Note: %s\n", task.Note)
+				fmt.Printf("Project: %s\n", task.Project)
+				fmt.Println()
+				fmt.Print("s: edit status | d: edit description | u: edit URL | n: edit note | p: edit project | qw: save and quit | q: quit without saving\n")
+				fmt.Print(">> ")
+
 			}
 
 		case quit:
