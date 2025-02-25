@@ -127,7 +127,21 @@ func Run() int {
 					}
 
 				case "c":
-					continue
+					fmt.Print("Complete? (task index) >> ")
+					for sc.Scan() {
+						input := normalizeInput(sc.Text())
+						taskIndex, err := strconv.Atoi(input)
+						if err != nil {
+							fmt.Printf("error parsing %s: %v", input, err)
+						}
+						if slices.Contains(tasksByCurrentStatus, taskIndex) {
+							tm.Tasks[taskIndex].Status = models.DONE
+							tm.UpdateIndexes()
+							break
+						}
+						break
+					}
+
 				case "m":
 					currentMenu = mainMenu
 				default:
@@ -196,6 +210,8 @@ func Run() int {
 							if err != nil {
 								log.Printf("error changing status: %v\n", err)
 							}
+						case "q":
+
 						default:
 							fmt.Printf("%s is not a valid menu option\n", statusChangeInput)
 							fmt.Print(">> ")
