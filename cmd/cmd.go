@@ -60,9 +60,9 @@ func Run() int {
 		log.Printf("error loading data from file %s: %v", datafile, err)
 	}
 
-	var selectedTask int
-	var selectedTasks []int
-	var menuStack []int = []int{mainMenu}
+	var selectedTaskIndex int
+	// var selectedTasks []int
+	// var menuStack []int = []int{mainMenu}
 
 	running := true
 	currentMenu := mainMenu
@@ -71,6 +71,7 @@ func Run() int {
 	sc := bufio.NewScanner(os.Stdin)
 
 	for running {
+		tasksByCurrentStatus := tm.StatusIndex[currentStatus]
 
 		switch currentMenu {
 		case mainMenu:
@@ -78,12 +79,10 @@ func Run() int {
 			currentMenu = showMainMenu()
 		case statusViewMenu:
 
-			tasks := tm.StatusIndex[currentStatus]
-
 			clearTerminal()
 			fmt.Println("Status View")
 			fmt.Printf("\nViewing: %s\n", currentStatus)
-			for _, taskIndex := range tasks {
+			for _, taskIndex := range tasksByCurrentStatus {
 				fmt.Printf("%d %s\n", taskIndex, tm.Tasks[taskIndex].Description)
 			}
 			fmt.Println("")
@@ -99,71 +98,177 @@ func Run() int {
 					newTask := models.NewTask()
 					newTask.Description = "test"
 					tm.AddTask(newTask)
-					break
 
 				case "i":
 					currentStatus = models.INBOX
-					break
 				case "a":
 					currentStatus = models.ACTION
-					break
 				case "l":
 					currentStatus = models.LATER
-					break
 				case "w":
 					currentStatus = models.WAITING
-					break
 				case "d":
 					currentStatus = models.DONE
-					break
 				case "t":
 					currentMenu = singleTaskViewMenu
+					fmt.Print("Task index >> ")
 					for sc.Scan() {
-						fmt.Print(">> ")
 						selectedTaskInput, err := strconv.Atoi(normalizeInput(sc.Text()))
 						if err != nil {
-							fmt.Printf("error parsing %s: %v", selectedTaskInput, err)
+							fmt.Printf("error parsing %d: %v", selectedTaskInput, err)
 						}
-						if slices.Contains(tasks, selectedTaskInput) {
-							selectedTask = selectedTaskInput
+						if slices.Contains(tasksByCurrentStatus, selectedTaskInput) {
+							selectedTaskIndex = selectedTaskInput
 							break
 						} else {
-							fmt.Printf("error finding %s: enter a valid task index from the list\n", selectedTaskInput)
+							fmt.Printf("error finding %d: enter a valid task index from the list\n", selectedTaskInput)
 							continue
 						}
 					}
-					break
 
 				case "c":
 					continue
 				case "m":
 					currentMenu = mainMenu
-					break
 				default:
 					fmt.Printf("%s is not a valid option\n", input)
 					fmt.Print(">> ")
+					continue
 				}
 				break
 			}
 		case singleTaskViewMenu:
-			task, err := tm.GetTask(selectedTask)
+			task, err := tm.GetTask(selectedTaskIndex)
+			clearTerminal()
+			if err != nil {
+				log.Printf("error finding task %d: %v\n", selectedTaskIndex, err)
+			}
+			fmt.Println("Single Task View")
+			fmt.Println()
+			fmt.Printf("Task: %d\n", selectedTaskIndex)
+			fmt.Println()
+			fmt.Printf("Status: %s\n", task.Status)
+			fmt.Printf("Description: %s\n", task.Description)
+			fmt.Printf("URL: %s\n", task.URL)
+			fmt.Printf("Note: %s\n", task.Note)
+			fmt.Printf("Project: %s\n", task.Project)
+			fmt.Println()
+			fmt.Println("s: edit status | d: edit description | u: edit URL | n: edit note | p: edit project | q: save and quit")
+			fmt.Print(">> ")
+
 			for sc.Scan() {
-				clearTerminal()
-				if err != nil {
-					log.Printf("error finding task %d: %v\n", selectedTask, err)
+
+				singleTaskViewMenuChoice := normalizeInput(sc.Text())
+
+				switch singleTaskViewMenuChoice {
+				case "s":
+					clearTerminal()
+					fmt.Printf("Current status: %s\n", task.Status)
+					fmt.Println("i: INBOX | a: ACTION | l: LATER | w: WAITING | d: DONE | q: save and quit editing status")
+					fmt.Print(">> ")
+					for sc.Scan() {
+						statusChangeInput := normalizeInput(sc.Text())
+
+						switch statusChangeInput {
+						case "i":
+							task.Status, err = models.NewStatus("INBOX")
+							if err != nil {
+								log.Printf("error changing status: %v\n", err)
+							}
+						case "a":
+							task.Status, err = models.NewStatus("ACTION")
+							if err != nil {
+								log.Printf("error changing status: %v\n", err)
+							}
+						case "l":
+							task.Status, err = models.NewStatus("LATER")
+							if err != nil {
+								log.Printf("error changing status: %v\n", err)
+							}
+						case "w":
+							task.Status, err = models.NewStatus("WAITING")
+							if err != nil {
+								log.Printf("error changing status: %v\n", err)
+							}
+
+						case "d":
+							task.Status, err = models.NewStatus("DONE")
+							if err != nil {
+								log.Printf("error changing status: %v\n", err)
+							}
+						default:
+							fmt.Printf("%s is not a valid menu option\n", statusChangeInput)
+							fmt.Print(">> ")
+							continue
+						}
+						tm.ReplaceTask(task, selectedTaskIndex)
+						break
+					}
+				case "d":
+					clearTerminal()
+					fmt.Println("Current description:")
+					fmt.Printf(">> %s\n", task.Description)
+					fmt.Println()
+					fmt.Print("New description >> ")
+					for sc.Scan() {
+						newInput := normalizeInput(sc.Text())
+						if newInput != "" {
+							task.Description = newInput
+						} else {
+							fmt.Print("New description >> ")
+							continue
+						}
+						break
+					}
+					tm.ReplaceTask(task, selectedTaskIndex)
+				case "u":
+					for sc.Scan() {
+						clearTerminal()
+						fmt.Println("Current URL:")
+						fmt.Printf(">> %s\n", task.URL)
+						fmt.Println()
+						fmt.Print("New URL >> ")
+						newInput := normalizeInput(sc.Text())
+						if newInput != "" {
+							task.URL = newInput
+						}
+					}
+					continue
+				case "n":
+					for sc.Scan() {
+						clearTerminal()
+						fmt.Println("Current note:")
+						fmt.Printf(">> %s\n", task.Note)
+						fmt.Println()
+						fmt.Print("New note >> ")
+						newInput := normalizeInput(sc.Text())
+						if newInput != "" {
+							task.Note = newInput
+						}
+					}
+					continue
+				case "p":
+					for sc.Scan() {
+						clearTerminal()
+						fmt.Println("Current project:")
+						fmt.Printf(">> %s\n", task.Project)
+						fmt.Println()
+						fmt.Print("New project >> ")
+						newInput := normalizeInput(sc.Text())
+						if newInput != "" {
+							task.Project = newInput
+						}
+					}
+
+				case "q":
+					tm.ReplaceTask(task, selectedTaskIndex)
+					currentMenu = mainMenu
+				default:
+					fmt.Printf("%s is not a valid menu option/n", singleTaskViewMenuChoice)
+					fmt.Print(">> ")
+					continue
 				}
-				fmt.Println("Single Task View")
-				fmt.Println()
-				fmt.Printf("Task: %d\n", selectedTask)
-				fmt.Println()
-				fmt.Printf("Status: %s\n", task.Status)
-				fmt.Printf("Description: %s\n", task.Description)
-				fmt.Printf("URL: %s\n", task.URL)
-				fmt.Printf("Note: %s\n", task.Note)
-				fmt.Printf("Project: %s\n", task.Project)
-				fmt.Println()
-				fmt.Println("s: edit status | d: edit description | u: edit URL | n: edit note | p: edit project | qw: save and quit | q: quit without saving")
-				fmt.Print(">> ")
+				break
 
 			}
 

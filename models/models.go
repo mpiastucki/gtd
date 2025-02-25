@@ -35,7 +35,7 @@ func (s Status) String() string {
 	}
 }
 
-func newStatus(newStatus string) (Status, error) {
+func NewStatus(newStatus string) (Status, error) {
 	switch newStatus {
 	case "INBOX":
 		return INBOX, nil
@@ -81,7 +81,7 @@ func (t *Task) fromString(str string) error {
 		return fmt.Errorf("error parsing text data into a new task")
 	}
 
-	status, err := newStatus(matches[1])
+	status, err := NewStatus(matches[1])
 	if err != nil {
 		return err
 	}
@@ -188,6 +188,15 @@ func (tm *TaskManager) DeleteTask(index int) error {
 	tm.Tasks = append(tm.Tasks[:index], tm.Tasks[index+1:]...)
 	tm.UpdateIndexes()
 
+	return nil
+}
+
+func (tm *TaskManager) ReplaceTask(task Task, index int) error {
+	if index < 0 || index >= len(tm.Tasks) {
+		return fmt.Errorf("error getting task: index not found")
+	}
+	tm.Tasks[index] = task
+	tm.UpdateIndexes()
 	return nil
 }
 
