@@ -29,7 +29,7 @@ n: new task | s: status | p: projects | at: all tasks | q: save and quit
 		case "s":
 			return statusViewMenu
 		case "p":
-			return mainMenu
+			return allProjectsViewMenu
 		case "at":
 			return allTasksViewMenu
 		case "q":
@@ -46,7 +46,8 @@ n: new task | s: status | p: projects | at: all tasks | q: save and quit
 const (
 	mainMenu int = iota
 	statusViewMenu
-	projectViewMenu
+	allProjectsViewMenu
+	singleProjectViewMenu
 	allTasksViewMenu
 	singleTaskViewMenu
 	quit
@@ -67,11 +68,17 @@ func Run() int {
 	running := true
 	currentMenu := mainMenu
 	currentStatus := models.INBOX
+	currentProject := ""
 
 	sc := bufio.NewScanner(os.Stdin)
 
 	for running {
 		tasksByCurrentStatus := tm.StatusIndex[currentStatus]
+		projects := make([]string, 0)
+		for project, _ := range tm.ProjectIndex {
+			projects = append(projects, project)
+		}
+		slices.Sort(projects)
 
 		switch currentMenu {
 		case mainMenu:
@@ -285,7 +292,37 @@ func Run() int {
 					continue
 				}
 				break
-
+			}
+		case allProjectsViewMenu:
+			clearTerminal()
+			fmt.Println("All projects:")
+			fmt.Println()
+			for key, project := range projects {
+				fmt.Printf("%d %s\n", key, project)
+			}
+			fmt.Println()
+			fmt.Println("(project index) select project | m: main menu")
+			for sc.Scan() {
+				input := normalizeInput(sc.Text())
+				projectIndex, err := strconv.Atoi(input)
+				if err != nil {
+					switch input {
+					case "m":
+					default:
+						fmt.Printf("%s is not a valid action; input a project index or a menu option\n", input)
+						fmt.Print(">> ")
+						continue
+					}
+				} else {
+					if projectIndex < 0 || projectIndex >= len(projects) {
+						fmt.Printf("%d is not a valid project index\n", projectIndex)
+						fmt.Print(">> ")
+						continue
+					}
+					currentProject = projects[projectIndex]
+					currentMenu = singleProjectViewMenu
+				}
+				break
 			}
 
 		case quit:
