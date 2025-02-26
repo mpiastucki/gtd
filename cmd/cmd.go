@@ -11,38 +11,6 @@ import (
 	"github.com/mpiastucki/gtd/models"
 )
 
-func showMainMenu() int {
-	menu := `=== GTD ===
-
-n: new task | s: status | p: projects | at: all tasks | q: save and quit
-
->> `
-
-	fmt.Print(menu)
-	sc := bufio.NewScanner(os.Stdin)
-	for sc.Scan() {
-		normalizedInput := normalizeInput(sc.Text())
-
-		switch normalizedInput {
-		case "n":
-			return mainMenu
-		case "s":
-			return statusViewMenu
-		case "p":
-			return allProjectsViewMenu
-		case "at":
-			return allTasksViewMenu
-		case "q":
-			return quit
-		default:
-			clearTerminal()
-			fmt.Println("Invalid menu option")
-			fmt.Print(menu)
-		}
-	}
-	return mainMenu
-}
-
 const (
 	mainMenu int = iota
 	statusViewMenu
