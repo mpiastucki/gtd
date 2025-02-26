@@ -62,8 +62,6 @@ func Run() int {
 	}
 
 	var selectedTaskIndex int
-	// var selectedTasks []int
-	// var menuStack []int = []int{mainMenu}
 
 	running := true
 	currentMenu := mainMenu
@@ -83,7 +81,33 @@ func Run() int {
 		switch currentMenu {
 		case mainMenu:
 			clearTerminal()
-			currentMenu = showMainMenu()
+			fmt.Println("=== GTD ===")
+			fmt.Println("n: new task | s: status | p: projects | q: save and quit")
+			fmt.Println("")
+			fmt.Print(">> ")
+			for sc.Scan() {
+				input := normalizeInput(sc.Text())
+				switch input {
+				case "n":
+					currentMenu = singleTaskViewMenu
+					t := models.NewTask()
+					t.Description = "no description"
+					tm.AddTask(t)
+					selectedTaskIndex = len(tm.Tasks) - 1
+				case "s":
+					currentMenu = statusViewMenu
+				case "p":
+					currentMenu = allProjectsViewMenu
+				case "q":
+					currentMenu = quit
+				default:
+					clearTerminal()
+					fmt.Println("Invalid menu option")
+					fmt.Print(">> ")
+					continue
+				}
+				break
+			}
 		case statusViewMenu:
 
 			clearTerminal()
@@ -93,68 +117,60 @@ func Run() int {
 				fmt.Printf("%d %s\n", taskIndex, tm.Tasks[taskIndex].Description)
 			}
 			fmt.Println("")
-			fmt.Println("n: new task | t: select task | c: complete a task | m: main menu")
+			fmt.Println("n: new task | c: complete a task | m: main menu")
 			fmt.Println("i: INBOX | a: ACTION | l: LATER | w: WAITING | d: DONE")
-			fmt.Print(">> ")
+			fmt.Print("index or menu option >> ")
 			for sc.Scan() {
-
 				input := normalizeInput(sc.Text())
-				switch input {
-				case "n":
-
-					newTask := models.NewTask()
-					newTask.Description = "test"
-					tm.AddTask(newTask)
-
-				case "i":
-					currentStatus = models.INBOX
-				case "a":
-					currentStatus = models.ACTION
-				case "l":
-					currentStatus = models.LATER
-				case "w":
-					currentStatus = models.WAITING
-				case "d":
-					currentStatus = models.DONE
-				case "t":
+				taskIndex, err := strconv.Atoi(input)
+				if err == nil {
+					if taskIndex < 0 || !slices.Contains(tasksByCurrentStatus, taskIndex) {
+						fmt.Printf("%d is not a valid task index\n", taskIndex)
+						fmt.Print("index or menu option >> ")
+						continue
+					}
+					selectedTaskIndex = taskIndex
 					currentMenu = singleTaskViewMenu
-					fmt.Print("Task index >> ")
-					for sc.Scan() {
-						selectedTaskInput, err := strconv.Atoi(normalizeInput(sc.Text()))
-						if err != nil {
-							fmt.Printf("error parsing %d: %v", selectedTaskInput, err)
-						}
-						if slices.Contains(tasksByCurrentStatus, selectedTaskInput) {
-							selectedTaskIndex = selectedTaskInput
-							break
-						} else {
-							fmt.Printf("error finding %d: enter a valid task index from the list\n", selectedTaskInput)
-							continue
-						}
-					}
+				} else {
+					switch input {
+					case "n":
 
-				case "c":
-					fmt.Print("Complete? (task index) >> ")
-					for sc.Scan() {
-						input := normalizeInput(sc.Text())
-						taskIndex, err := strconv.Atoi(input)
-						if err != nil {
-							fmt.Printf("error parsing %s: %v", input, err)
-						}
-						if slices.Contains(tasksByCurrentStatus, taskIndex) {
-							tm.Tasks[taskIndex].Status = models.DONE
-							tm.UpdateIndexes()
+						newTask := models.NewTask()
+						newTask.Description = "test"
+						tm.AddTask(newTask)
+
+					case "i":
+						currentStatus = models.INBOX
+					case "a":
+						currentStatus = models.ACTION
+					case "l":
+						currentStatus = models.LATER
+					case "w":
+						currentStatus = models.WAITING
+					case "d":
+						currentStatus = models.DONE
+					case "c":
+						fmt.Print("Complete? (task index) >> ")
+						for sc.Scan() {
+							input := normalizeInput(sc.Text())
+							taskIndex, err := strconv.Atoi(input)
+							if err != nil {
+								fmt.Printf("error parsing %s: %v", input, err)
+							}
+							if slices.Contains(tasksByCurrentStatus, taskIndex) {
+								tm.Tasks[taskIndex].Status = models.DONE
+								tm.UpdateIndexes()
+								break
+							}
 							break
 						}
-						break
+					case "m":
+						currentMenu = mainMenu
+					default:
+						fmt.Printf("%s is not a valid option\n", input)
+						fmt.Print(">> ")
+						continue
 					}
-
-				case "m":
-					currentMenu = mainMenu
-				default:
-					fmt.Printf("%s is not a valid option\n", input)
-					fmt.Print(">> ")
-					continue
 				}
 				break
 			}
@@ -231,7 +247,7 @@ func Run() int {
 					clearTerminal()
 					fmt.Println("Current description:")
 					fmt.Printf(">> %s\n", task.Description)
-					fmt.Println()
+					fmt.Println("")
 					fmt.Print("New description >> ")
 					for sc.Scan() {
 						newInput := normalizeInput(sc.Text())
@@ -245,44 +261,47 @@ func Run() int {
 					}
 					tm.ReplaceTask(task, selectedTaskIndex)
 				case "u":
+					clearTerminal()
+					fmt.Println("Current URL:")
+					fmt.Printf(">> %s\n", task.URL)
+					fmt.Println("")
+					fmt.Print("New URL >> ")
 					for sc.Scan() {
-						clearTerminal()
-						fmt.Println("Current URL:")
-						fmt.Printf(">> %s\n", task.URL)
-						fmt.Println()
-						fmt.Print("New URL >> ")
 						newInput := normalizeInput(sc.Text())
 						if newInput != "" {
 							task.URL = newInput
 						}
+						break
 					}
-					continue
+					tm.ReplaceTask(task, selectedTaskIndex)
 				case "n":
+					clearTerminal()
+					fmt.Println("Current note:")
+					fmt.Printf(">> %s\n", task.Note)
+					fmt.Println("")
+					fmt.Print("New note >> ")
 					for sc.Scan() {
-						clearTerminal()
-						fmt.Println("Current note:")
-						fmt.Printf(">> %s\n", task.Note)
-						fmt.Println()
-						fmt.Print("New note >> ")
 						newInput := normalizeInput(sc.Text())
 						if newInput != "" {
 							task.Note = newInput
 						}
+						break
 					}
-					continue
+					tm.ReplaceTask(task, selectedTaskIndex)
 				case "p":
+					clearTerminal()
+					fmt.Println("Current project:")
+					fmt.Printf(">> %s\n", task.Project)
+					fmt.Println("")
+					fmt.Print("New project >> ")
 					for sc.Scan() {
-						clearTerminal()
-						fmt.Println("Current project:")
-						fmt.Printf(">> %s\n", task.Project)
-						fmt.Println()
-						fmt.Print("New project >> ")
 						newInput := normalizeInput(sc.Text())
 						if newInput != "" {
 							task.Project = newInput
 						}
+						break
 					}
-
+					tm.ReplaceTask(task, selectedTaskIndex)
 				case "q":
 					tm.ReplaceTask(task, selectedTaskIndex)
 					currentMenu = mainMenu
@@ -296,12 +315,13 @@ func Run() int {
 		case allProjectsViewMenu:
 			clearTerminal()
 			fmt.Println("All projects:")
-			fmt.Println()
+			fmt.Println("")
 			for key, project := range projects {
 				fmt.Printf("%d %s\n", key, project)
 			}
-			fmt.Println()
-			fmt.Println("(project index) select project | m: main menu")
+			fmt.Println("")
+			fmt.Println("m: main menu")
+			fmt.Print("project index or menu option >> ")
 			for sc.Scan() {
 				input := normalizeInput(sc.Text())
 				projectIndex, err := strconv.Atoi(input)
@@ -327,12 +347,12 @@ func Run() int {
 		case singleProjectViewMenu:
 			clearTerminal()
 			fmt.Printf("Project: %s\n", currentProject)
-			fmt.Println()
+			fmt.Println("")
 			fmt.Println("Tasks:")
 			for key, taskIndex := range tm.ProjectIndex[currentProject] {
-				fmt.Printf("%d %s", key, tm.Tasks[taskIndex])
+				fmt.Printf("%d %s %s", key, tm.Tasks[taskIndex].Status, tm.Tasks[taskIndex].Description)
 			}
-			fmt.Println()
+			fmt.Println("")
 			fmt.Println("p: all projects menu | m: main menu")
 			fmt.Print("index or menu option >> ")
 			for sc.Scan() {
@@ -350,7 +370,7 @@ func Run() int {
 						continue
 					}
 				} else {
-					if taskIndex < 0 || slices.Contains(tm.ProjectIndex[currentProject], taskIndex) {
+					if taskIndex < 0 || !slices.Contains(tm.ProjectIndex[currentProject], taskIndex) {
 						fmt.Printf("%d is not a valid task index\n", taskIndex)
 						fmt.Print("index or menu option >> ")
 						continue
