@@ -1,3 +1,0 @@
-INBOX;hello;;;noProject
-INBOX;test;;;noProject
-INBOX;help jess;;google.com;noProject
