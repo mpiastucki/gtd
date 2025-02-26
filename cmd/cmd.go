@@ -341,7 +341,9 @@ func Run() int {
 				if err != nil {
 					switch input {
 					case "p":
+						currentMenu = allProjectsViewMenu
 					case "m":
+						currentMenu = mainMenu
 					default:
 						fmt.Printf("%s is not a menu option\n", input)
 						fmt.Print("index or menu option >> ")
