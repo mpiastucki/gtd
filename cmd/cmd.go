@@ -324,6 +324,41 @@ func Run() int {
 				}
 				break
 			}
+		case singleProjectViewMenu:
+			clearTerminal()
+			fmt.Printf("Project: %s\n", currentProject)
+			fmt.Println()
+			fmt.Println("Tasks:")
+			for key, taskIndex := range tm.ProjectIndex[currentProject] {
+				fmt.Printf("%d %s", key, tm.Tasks[taskIndex])
+			}
+			fmt.Println()
+			fmt.Println("p: all projects menu | m: main menu")
+			fmt.Print("index or menu option >> ")
+			for sc.Scan() {
+				input := normalizeInput(sc.Text())
+				taskIndex, err := strconv.Atoi(input)
+				if err != nil {
+					switch input {
+					case "p":
+					case "m":
+					default:
+						fmt.Printf("%s is not a menu option\n", input)
+						fmt.Print("index or menu option >> ")
+						continue
+					}
+				} else {
+					if taskIndex < 0 || slices.Contains(tm.ProjectIndex[currentProject], taskIndex) {
+						fmt.Printf("%d is not a valid task index\n", taskIndex)
+						fmt.Print("index or menu option >> ")
+						continue
+
+					}
+					currentMenu = singleTaskViewMenu
+					selectedTaskIndex = taskIndex
+				}
+				break
+			}
 
 		case quit:
 			clearTerminal()
