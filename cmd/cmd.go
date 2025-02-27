@@ -218,7 +218,7 @@ func Run() int {
 					fmt.Println("")
 					fmt.Print("New description >> ")
 					for sc.Scan() {
-						newInput := normalizeInput(sc.Text())
+						newInput := sc.Text()
 						if newInput != "" {
 							task.Description = newInput
 						} else {
@@ -235,7 +235,7 @@ func Run() int {
 					fmt.Println("")
 					fmt.Print("New URL >> ")
 					for sc.Scan() {
-						newInput := normalizeInput(sc.Text())
+						newInput := sc.Text()
 						if newInput != "" {
 							task.URL = newInput
 						}
@@ -249,7 +249,7 @@ func Run() int {
 					fmt.Println("")
 					fmt.Print("New note >> ")
 					for sc.Scan() {
-						newInput := normalizeInput(sc.Text())
+						newInput := sc.Text()
 						if newInput != "" {
 							task.Note = newInput
 						}
@@ -263,7 +263,7 @@ func Run() int {
 					fmt.Println("")
 					fmt.Print("New project >> ")
 					for sc.Scan() {
-						newInput := normalizeInput(sc.Text())
+						newInput := sc.Text()
 						if newInput != "" {
 							task.Project = newInput
 						}
@@ -296,6 +296,7 @@ func Run() int {
 				if err != nil {
 					switch input {
 					case "m":
+						currentMenu = mainMenu
 					default:
 						fmt.Printf("%s is not a valid action; input a project index or a menu option\n", input)
 						fmt.Print(">> ")
@@ -317,8 +318,8 @@ func Run() int {
 			fmt.Printf("Project: %s\n", currentProject)
 			fmt.Println("")
 			fmt.Println("Tasks:")
-			for key, taskIndex := range tm.ProjectIndex[currentProject] {
-				fmt.Printf("%d %s %s", key, tm.Tasks[taskIndex].Status, tm.Tasks[taskIndex].Description)
+			for _, taskIndex := range tm.ProjectIndex[currentProject] {
+				fmt.Printf("%d %s %s", taskIndex, tm.Tasks[taskIndex].Status, tm.Tasks[taskIndex].Description)
 			}
 			fmt.Println("")
 			fmt.Println("p: all projects menu | m: main menu")
