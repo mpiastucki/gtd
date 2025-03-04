@@ -319,7 +319,7 @@ func Run() int {
 			fmt.Println("")
 			fmt.Println("Tasks:")
 			for _, taskIndex := range tm.ProjectIndex[currentProject] {
-				fmt.Printf("%d %s %s", taskIndex, tm.Tasks[taskIndex].Status, tm.Tasks[taskIndex].Description)
+				fmt.Printf("%d %s %s\n", taskIndex, tm.Tasks[taskIndex].Status, tm.Tasks[taskIndex].Description)
 			}
 			fmt.Println("")
 			fmt.Println("p: all projects menu | m: main menu")
