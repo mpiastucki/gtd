@@ -107,9 +107,10 @@ func Run() int {
 					case "n":
 
 						newTask := models.NewTask()
-						newTask.Description = "test"
+						newTask.Description = "new task"
 						tm.AddTask(newTask)
 						hasBeenEdited = true
+						currentStatus = models.INBOX
 
 					case "i":
 						currentStatus = models.INBOX
