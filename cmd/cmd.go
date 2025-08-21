@@ -35,6 +35,7 @@ func Run() int {
 	currentMenu := mainMenu
 	currentStatus := models.INBOX
 	currentProject := ""
+	hasBeenEdited := false
 
 	sc := bufio.NewScanner(os.Stdin)
 
@@ -62,6 +63,8 @@ func Run() int {
 					t.Description = "no description"
 					tm.AddTask(t)
 					selectedTaskIndex = len(tm.Tasks) - 1
+					hasBeenEdited = true
+
 				case "s":
 					currentMenu = statusViewMenu
 				case "p":
@@ -106,6 +109,7 @@ func Run() int {
 						newTask := models.NewTask()
 						newTask.Description = "test"
 						tm.AddTask(newTask)
+						hasBeenEdited = true
 
 					case "i":
 						currentStatus = models.INBOX
@@ -209,6 +213,7 @@ func Run() int {
 							continue
 						}
 						tm.ReplaceTask(task, selectedTaskIndex)
+						hasBeenEdited = true
 						break
 					}
 				case "d":
@@ -228,6 +233,8 @@ func Run() int {
 						break
 					}
 					tm.ReplaceTask(task, selectedTaskIndex)
+					hasBeenEdited = true
+
 				case "u":
 					clearTerminal()
 					fmt.Println("Current URL:")
@@ -242,6 +249,8 @@ func Run() int {
 						break
 					}
 					tm.ReplaceTask(task, selectedTaskIndex)
+					hasBeenEdited = true
+
 				case "n":
 					clearTerminal()
 					fmt.Println("Current note:")
@@ -256,6 +265,8 @@ func Run() int {
 						break
 					}
 					tm.ReplaceTask(task, selectedTaskIndex)
+					hasBeenEdited = true
+
 				case "p":
 					clearTerminal()
 					fmt.Println("Current project:")
@@ -270,6 +281,8 @@ func Run() int {
 						break
 					}
 					tm.ReplaceTask(task, selectedTaskIndex)
+					hasBeenEdited = true
+
 				case "q":
 					tm.ReplaceTask(task, selectedTaskIndex)
 					currentMenu = mainMenu
@@ -353,16 +366,20 @@ func Run() int {
 
 		case quit:
 			clearTerminal()
-			fmt.Printf("Saving tasks to file %s...\n", datafile)
-			n, err := tm.Save(datafile)
-			if err != nil {
-				log.Printf("error saving to file: %v\n", err)
+			if hasBeenEdited {
+				fmt.Printf("Saving tasks to file %s...\n", datafile)
+				n, err := tm.Save(datafile)
+				if err != nil {
+					log.Printf("error saving to file: %v\n", err)
+				}
+				fmt.Printf("wrote %d to file %s\n", n, datafile)
+				fmt.Println("Exiting GTD...")
+			} else {
+				fmt.Printf("Exiting GTD...")
 			}
-			fmt.Printf("wrote %d to file %s\n", n, datafile)
 			running = false
 		}
 	}
 
-	fmt.Println("Exiting GTD")
 	return 0
 }
